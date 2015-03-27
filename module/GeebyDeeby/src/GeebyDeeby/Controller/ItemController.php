@@ -150,6 +150,10 @@ class ItemController extends AbstractBase
         $item = $graph->resource($uri, 'rdf:Description');
         $name = $view->item['Item_Name'];
         $item->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
+        foreach ($view->credits as $credit) {
+            $personUri = $this->getServerUrl('person', ['id' => $credit['Person_ID']]);
+            $item->add('dcterms:creator', $personUri);
+        }
 
         return $this->getRdfResponse($graph);
     }
