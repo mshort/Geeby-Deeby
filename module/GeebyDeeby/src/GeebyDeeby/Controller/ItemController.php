@@ -120,15 +120,61 @@ class ItemController extends AbstractBase
     }
 
     /**
-     * "Show item" page
+     * 303 redirect page
      *
      * @return mixed
      */
     public function indexAction()
     {
+        return $this->performRdfRedirect('item');
+    }
+
+    /**
+     * RDF representation page
+     *
+     * @return mixed
+     */
+    public function rdfAction()
+    {
+        $view = $this->getViewModelWithItemAndDetails();
+        if (!is_object($view)) {
+            $response = $this->getResponse();
+            $response->setStatusCode(404);
+            return $response;
+        }
+
+        $articleHelper = $this->getServiceLocator()->get('GeebyDeeby\Articles');
+        $graph = new \EasyRdf\Graph();
+        $id = $view->item['Item_ID'];
+        $uri = $this->getServerUrl('item', ['id' => $id]);
+        $item = $graph->resource($uri, 'rdf:Description');
+        $name = $view->item['Item_Name'];
+        $item->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
+
+        return $this->getRdfResponse($graph);
+    }
+
+    /**
+     * "Show item" page
+     *
+     * @return mixed
+     */
+    public function showAction()
+    {
+        return ($view = $this->getViewModelWithItemAndDetails())
+            ? $view : $this->forwardTo(__NAMESPACE__ . '\Item', 'notfound');
+    }
+
+    /**
+     * Get the view model representing the item and all relevant related details.
+     *
+     * @return \Zend\View\Model\ViewModel|bool
+     */
+    public function getViewModelWithItemAndDetails()
+    {
         $view = $this->getViewModelWithItem();
         if (!$view) {
-            return $this->forwardTo(__NAMESPACE__ . '\Item', 'notfound');
+            return false;
         }
         $id = $view->item['Item_ID'];
         $view->credits = $this->getDbTable('editionscredits')->getCreditsForItem($id);
