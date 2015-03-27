@@ -39,32 +39,69 @@ namespace GeebyDeeby\Controller;
 class PersonController extends AbstractBase
 {
     /**
-     * "Show person" page
+     * 303 redirect page
      *
      * @return mixed
      */
     public function indexAction()
     {
+        $accept = $this->getRequest()->getHeaders()->get('accept');
+        $rdfxml = $accept->match('application/rdf+xml');
+        $html = $accept->match('text/html');
+        $action = ($rdfxml->priority > $html->priority)
+            ? 'RDF' : 'Show';
+        $id = $this->params()->fromRoute('id');
+        $response = $this->redirect()->toRoute('person', compact('action', 'id'));
+        $response->setStatusCode(303);
+        return $response;
+    }
+
+    /**
+     * RDF representation page
+     *
+     * @return mixed
+     */
+    public function rdfAction()
+    {
+        $response = $this->getResponse();
+
+        $id = $this->params()->fromRoute('id');
+        $view = $this->getPersonViewModel($id);
+        if (!is_object($view)) {
+            $response->setStatusCode(404);
+            return $response;
+        }
+
+        $graph = new \EasyRdf\Graph();
+        $uri = $this->getServerUrl('person', ['id' => $id]);
+        $person = $graph->resource($uri, 'foaf:Person');
+        $name = $view->person['First_Name'] . ' ' . $view->person['Middle_Name']
+            . ' ' . $view->person['Last_Name'];
+        $person->set('foaf:name', trim(preg_replace('/\s+/', ' ', $name)));
+
+        $response->setContent($graph->serialise('rdfxml'));
+        $headers = $response->getHeaders();
+        $headers->addHeaderLine(
+            'Content-type', 'application/rdf+xml'
+        );
+        return $response;
+    }
+
+    /**
+     * "Show person" page
+     *
+     * @return mixed
+     */
+    public function showAction()
+    {
         $id = $this->params()->fromRoute('id');
         if (null === $id) {
             return $this->forwardTo(__NAMESPACE__ . '\Person', 'list');
         }
-        $table = $this->getDbTable('person');
-        $rowObj = $table->getByPrimaryKey($id);
-        if (!is_object($rowObj)) {
+        $view = $this->getPersonViewModel($id);
+        if (!is_object($view)) {
             return $this->forwardTo(__NAMESPACE__ . '\Person', 'notfound');
         }
-        $view = $this->createViewModel(
-            array('person' => $rowObj->toArray())
-        );
-        $view->credits = $this->getDbTable('editionscredits')->getCreditsForPerson($id);
-        $pseudo = $this->getDbTable('pseudonyms');
-        $view->pseudonyms = $pseudo->getPseudonyms($id);
-        $view->realNames = $pseudo->getRealNames($id);
-        $view->files = $this->getDbTable('peoplefiles')->getFilesForPerson($id);
-        $view->bibliography = $this->getDbTable('peoplebibliography')
-            ->getItemsDescribingPerson($id);
-        $view->links = $this->getDbTable('peoplelinks')->getLinksForPerson($id);
         return $view;
     }
 
@@ -93,5 +130,34 @@ class PersonController extends AbstractBase
     public function notfoundAction()
     {
         return $this->createViewModel();
+    }
+
+    /**
+     * Get the view model representing the specified person (or false if
+     * invalid ID)
+     *
+     * @param int $id ID of person to load
+     *
+     * @return \Zend\View\Model\ViewModel|bool
+     */
+    protected function getPersonViewModel($id)
+    {
+        $table = $this->getDbTable('person');
+        $rowObj = $table->getByPrimaryKey($id);
+        if (!is_object($rowObj)) {
+            return false;
+        }
+        $view = $this->createViewModel(
+            array('person' => $rowObj->toArray())
+        );
+        $view->credits = $this->getDbTable('editionscredits')->getCreditsForPerson($id);
+        $pseudo = $this->getDbTable('pseudonyms');
+        $view->pseudonyms = $pseudo->getPseudonyms($id);
+        $view->realNames = $pseudo->getRealNames($id);
+        $view->files = $this->getDbTable('peoplefiles')->getFilesForPerson($id);
+        $view->bibliography = $this->getDbTable('peoplebibliography')
+            ->getItemsDescribingPerson($id);
+        $view->links = $this->getDbTable('peoplelinks')->getLinksForPerson($id);
+        return $view;
     }
 }
