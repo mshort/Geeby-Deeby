@@ -171,10 +171,57 @@ class SeriesController extends AbstractBase
         if ($id == 'Comments') {
             return $this->forwardTo(__NAMESPACE__ . '\Series', 'comments');
         }
+        return $this->performRdfRedirect('series');
+    }
+
+    /**
+     * RDF representation page
+     *
+     * @return mixed
+     */
+    public function rdfAction()
+    {
+        $view = $this->getViewModelWithSeriesAndDetails();
+        if (!is_object($view)) {
+            $response = $this->getResponse();
+            $response->setStatusCode(404);
+            return $response;
+        }
+
+        $articleHelper = $this->getServiceLocator()->get('GeebyDeeby\Articles');
+        $graph = new \EasyRdf\Graph();
+        $id = $view->series['Series_ID'];
+        $uri = $this->getServerUrl('series', ['id' => $id]);
+        $series = $graph->resource($uri, 'rdf:Description');
+        $name = $view->series['Series_Name'];
+        $series->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
+
+        return $this->getRdfResponse($graph);
+    }
+
+    /**
+     * "Show item" page
+     *
+     * @return mixed
+     */
+    public function showAction()
+    {
+        return ($view = $this->getViewModelWithSeriesAndDetails())
+            ? $view : $this->forwardTo(__NAMESPACE__ . '\Series', 'notfound');
+    }
+
+    /**
+     * Get the view model representing the series and all relevant related details.
+     *
+     * @return \Zend\View\Model\ViewModel|bool
+     */
+    public function getViewModelWithSeriesAndDetails()
+    {
         $view = $this->getViewModelWithSeries();
         if (!$view) {
-            return $this->forwardTo(__NAMESPACE__ . '\Series', 'notfound');
+            return false;
         }
+        $id = $view->series['Series_ID'];
         $view->altTitles = $this->getDbTable('seriesalttitles')->getAltTitles($id);
         $view->categories = $this->getDbTable('seriescategories')
             ->getCategories($id);
