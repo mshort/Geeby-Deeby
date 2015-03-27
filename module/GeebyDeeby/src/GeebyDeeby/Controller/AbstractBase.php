@@ -406,4 +406,44 @@ class AbstractBase extends AbstractActionController
             ? $this->forwardTo('GeebyDeeby\Controller\Index', 'Login')
             : $this->redirect()->toRoute('login');
     }
+
+    /**
+     * Format an RDF response.
+     *
+     * @param \EasyRdf\Graph $graph Graph to output
+     *
+     * @return mixed
+     */
+    protected function getRdfResponse(\EasyRdf\Graph $graph)
+    {
+        $response = $this->getResponse();
+        $response->setContent($graph->serialise('rdfxml'));
+        $headers = $response->getHeaders();
+        $headers->addHeaderLine(
+            'Content-type', 'application/rdf+xml'
+        );
+        return $response;
+    }
+
+    /**
+     * Perform a 303 redirect for RDF display.
+     *
+     * @param string $route   Target route
+     * @param string $idParam Route parameter containing ID
+     *
+     * @return mixed
+     */
+    protected function performRdfRedirect($route, $idParam = 'id')
+    {
+        $accept = $this->getRequest()->getHeaders()->get('accept');
+        $rdfxml = $accept->match('application/rdf+xml');
+        $html = $accept->match('text/html');
+        $action = ($rdfxml->priority > $html->priority)
+            ? 'RDF' : 'Show';
+        $id = $this->params()->fromRoute($idParam);
+        $response = $this->redirect()
+            ->toRoute($route, ['action' => $action, $idParam => $id]);
+        $response->setStatusCode(303);
+        return $response;
+    }
 }

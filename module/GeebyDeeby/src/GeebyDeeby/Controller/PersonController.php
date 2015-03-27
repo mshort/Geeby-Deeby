@@ -45,15 +45,7 @@ class PersonController extends AbstractBase
      */
     public function indexAction()
     {
-        $accept = $this->getRequest()->getHeaders()->get('accept');
-        $rdfxml = $accept->match('application/rdf+xml');
-        $html = $accept->match('text/html');
-        $action = ($rdfxml->priority > $html->priority)
-            ? 'RDF' : 'Show';
-        $id = $this->params()->fromRoute('id');
-        $response = $this->redirect()->toRoute('person', compact('action', 'id'));
-        $response->setStatusCode(303);
-        return $response;
+        return $this->performRdfRedirect('person');
     }
 
     /**
@@ -63,11 +55,10 @@ class PersonController extends AbstractBase
      */
     public function rdfAction()
     {
-        $response = $this->getResponse();
-
         $id = $this->params()->fromRoute('id');
         $view = $this->getPersonViewModel($id);
         if (!is_object($view)) {
+            $response = $this->getResponse();
             $response->setStatusCode(404);
             return $response;
         }
@@ -79,12 +70,7 @@ class PersonController extends AbstractBase
             . ' ' . $view->person['Last_Name'];
         $person->set('foaf:name', trim(preg_replace('/\s+/', ' ', $name)));
 
-        $response->setContent($graph->serialise('rdfxml'));
-        $headers = $response->getHeaders();
-        $headers->addHeaderLine(
-            'Content-type', 'application/rdf+xml'
-        );
-        return $response;
+        return $this->getRdfResponse($graph);
     }
 
     /**
