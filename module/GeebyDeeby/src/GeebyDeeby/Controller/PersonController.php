@@ -84,7 +84,9 @@ class PersonController extends AbstractBase
         if (null === $id) {
             return $this->forwardTo(__NAMESPACE__ . '\Person', 'list');
         }
-        $view = $this->getPersonViewModel($id);
+        $view = $this->getPersonViewModel(
+            $id, $this->params()->fromQuery('sort', 'series')
+        );
         if (!is_object($view)) {
             return $this->forwardTo(__NAMESPACE__ . '\Person', 'notfound');
         }
@@ -126,7 +128,7 @@ class PersonController extends AbstractBase
      *
      * @return \Zend\View\Model\ViewModel|bool
      */
-    protected function getPersonViewModel($id)
+    protected function getPersonViewModel($id, $sort = 'title')
     {
         $table = $this->getDbTable('person');
         $rowObj = $table->getByPrimaryKey($id);
@@ -136,7 +138,9 @@ class PersonController extends AbstractBase
         $view = $this->createViewModel(
             array('person' => $rowObj->toArray())
         );
-        $view->credits = $this->getDbTable('editionscredits')->getCreditsForPerson($id);
+        $view->sort = $sort;
+        $view->credits = $this->getDbTable('editionscredits')
+            ->getCreditsForPerson($id, $view->sort);
         $pseudo = $this->getDbTable('pseudonyms');
         $view->pseudonyms = $pseudo->getPseudonyms($id);
         $view->realNames = $pseudo->getRealNames($id);
