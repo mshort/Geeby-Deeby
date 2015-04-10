@@ -441,8 +441,10 @@ class AbstractBase extends AbstractActionController
         $action = ($rdfxml->priority > $html->priority)
             ? 'RDF' : 'Show';
         $id = $this->params()->fromRoute($idParam);
-        $response = $this->redirect()
-            ->toRoute($route, ['action' => $action, $idParam => $id]);
+        $response = $this->redirect()->toRoute(
+            $route, ['action' => $action, $idParam => $id],
+            ['query' => $this->params()->fromQuery()]
+        );
         $response->setStatusCode(303);
         return $response;
     }
