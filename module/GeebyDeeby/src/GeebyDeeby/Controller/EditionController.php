@@ -127,6 +127,19 @@ class EditionController extends AbstractBase
             $graph->addResource(
                 $edition, 'dime:IsRealizationOfCreativeWork', $item
             );
+            $title = $articleHelper->formatTrailingArticles(
+                isset($view->item['Item_AltName'])
+                    ? $view->item['Item_AltName'] : $view->item['Item_Name']
+            );
+            $edition->add('rda:P60588', $title);
+        }
+
+        if (isset($view->series)) {
+            $uri = $this->getServerUrl('series', ['id' => $view->series['Series_ID']]);
+            $edition->add('dime:hasSeries', $graph->resource($uri, 'dime:Series'));
+            if ($view->edition['Position'] > 0) {
+                $edition->add('rda:P60081', (string)$view->edition['Position']);
+            }
         }
 
         foreach ($view->publishers as $publisher) {
@@ -142,6 +155,9 @@ class EditionController extends AbstractBase
             $edition->add('rda:P60547', $name);
         }
 
+        if (!empty($view->edition['Edition_Length'])) {
+            $edition->add('rda:P60550', $view->edition['Edition_Length']);
+        }
         return $this->getRdfResponse($graph);
     }
 
