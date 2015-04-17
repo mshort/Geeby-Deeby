@@ -332,7 +332,6 @@ class SeriesController extends AbstractBase
 
         $articleHelper = $this->getServiceLocator()->get('GeebyDeeby\Articles');
         $graph = new \EasyRdf\Graph();
-        $id = $view->series['Series_ID'];
         $uri = $this->getServerUrl('series', ['id' => $id]);
         $series = $graph->resource($uri, 'rdf:Description');
         $name = $view->series['Series_Name'];
