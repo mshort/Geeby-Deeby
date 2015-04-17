@@ -65,7 +65,7 @@ class PublisherController extends AbstractBase
         $graph = new \EasyRdf\Graph();
         $uri = $this->getServerUrl('publisher', ['id' => $view->publisher['Publisher_ID']]);
         $pub = $graph->resource($uri, 'foaf:CorporateBody');
-        $pub->set('http://rdaregistry.info/Elements/u/P60549', $view->publisher['Publisher_Name']);
+        $pub->set('rda:P60549', $view->publisher['Publisher_Name']);
 
         return $this->getRdfResponse($graph);
      }

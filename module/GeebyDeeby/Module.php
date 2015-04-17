@@ -19,6 +19,9 @@ class Module
         $eventManager        = $e->getApplication()->getEventManager();
         $moduleRouteListener = new ModuleRouteListener();
         $moduleRouteListener->attach($eventManager);
+
+        \EasyRdf\RdfNamespace::set('dime', 'http://dimenovels.org/ontology#');
+        \EasyRdf\RdfNamespace::set('rda', 'http://rdaregistry.info/Elements/u/P60549');
     }
 
     public function getConfig()

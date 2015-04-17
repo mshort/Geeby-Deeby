@@ -115,7 +115,7 @@ class EditionController extends AbstractBase
         $graph = new \EasyRdf\Graph();
         $id = $view->edition['Edition_ID'];
         $uri = $this->getServerUrl('edition', ['id' => $id]);
-        $edition = $graph->resource($uri, 'http://dimenovels.org/ontology#Edition');
+        $edition = $graph->resource($uri, 'dime:Edition');
         foreach ($view->credits as $credit) {
             $personUri = $this->getServerUrl('person', ['id' => $credit['Person_ID']]);
             $edition->add('dcterms:creator', $graph->resource($personUri));
@@ -125,22 +125,21 @@ class EditionController extends AbstractBase
             $uri = $this->getServerUrl('item', ['id' => $view->item['Item_ID']]);
             $item = $graph->resource($uri, 'schema:CreativeWork');
             $graph->addResource(
-                $edition,
-                'http://dimenovels.org/ontology#IsRealizationOfCreativeWork', $item
+                $edition, 'dime:IsRealizationOfCreativeWork', $item
             );
         }
 
         foreach ($view->publishers as $publisher) {
             $uri = $this->getServerUrl('publisher', ['id' => $publisher['Publisher_ID']]);
             $pub = $graph->resource($uri, 'foaf:CorporateBody');
-            $edition->add('http://rdaregistry.info/Elements/u/P60444', $pub);
+            $edition->add('rda:P60444', $pub);
             $name = $publisher['Publisher_Name'];
             foreach (['Imprint_Name', 'Street', 'City_Name'] as $field) {
                 if (isset($publisher[$field])) {
                     $name .= ', ' . $publisher[$field];
                 }
             }
-            $edition->add('http://rdaregistry.info/Elements/u/P60547', $name);
+            $edition->add('rda:P60547', $name);
         }
 
         return $this->getRdfResponse($graph);

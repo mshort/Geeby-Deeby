@@ -304,7 +304,7 @@ class SeriesController extends AbstractBase
         foreach ($list as $series) {
             $id = $series->Series_ID;
             $uri = $this->getServerUrl('series', ['id' => $id]);
-            $graph->resource($uri, 'http://dimenovels.org/ontology#Series');
+            $graph->resource($uri, 'dime:Series');
         }
         return $graph;
     }
@@ -334,7 +334,7 @@ class SeriesController extends AbstractBase
         $articleHelper = $this->getServiceLocator()->get('GeebyDeeby\Articles');
         $graph = new \EasyRdf\Graph();
         $uri = $this->getServerUrl('series', ['id' => $id]);
-        $series = $graph->resource($uri, 'http://dimenovels.org/ontology#Series');
+        $series = $graph->resource($uri, 'dime:Series');
         $name = $view->series['Series_Name'];
         $series->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
 
@@ -342,7 +342,7 @@ class SeriesController extends AbstractBase
             $uri = $this->getServerUrl('item', ['id' => $item['Item_ID']]);
             $item = $graph->resource($uri, 'http://schema.org/CreativeWork');
             $graph->addResource(
-                $item, 'http://dimenovels.org/ontology#HasSeries', $series
+                $item, 'dime:HasSeries', $series
             );
         }
 

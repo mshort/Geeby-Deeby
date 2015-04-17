@@ -75,7 +75,7 @@ class PersonController extends AbstractBase
             $authName .= ', ' . $first;
         }
         $authName .= $view->person['Extra_Details'];
-        $person->set('http://rdaregistry.info/Elements/u/P60549', $authName);
+        $person->set('rda:P60549', $authName);
 
         return $this->getRdfResponse($graph);
     }

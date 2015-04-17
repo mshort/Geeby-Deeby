@@ -155,8 +155,7 @@ class ItemController extends AbstractBase
             $uri = $this->getServerUrl('item', ['id' => $current['Item_ID']]);
             $newItem = $graph->resource($uri, 'schema:CreativeWork');
             $graph->addResource(
-                $item, 'http://dimenovels.org/ontology#IsRealizationOfCreativeWork',
-                $newItem
+                $item, 'dime:IsRealizationOfCreativeWork', $newItem
             );
         }
 
@@ -164,17 +163,15 @@ class ItemController extends AbstractBase
             $uri = $this->getServerUrl('item', ['id' => $current['Item_ID']]);
             $newItem = $graph->resource($uri, 'schema:CreativeWork');
             $graph->addResource(
-                $newItem,
-                'http://dimenovels.org/ontology#IsRealizationOfCreativeWork', $item
+                $newItem, 'dime:IsRealizationOfCreativeWork', $item
             );
         }
 
         foreach ($view->editions as $current) {
             $uri = $this->getServerUrl('edition', ['id' => $current['Edition_ID']]);
-            $newItem = $graph->resource($uri, 'http://dimenovels.org/ontology#Edition');
+            $newItem = $graph->resource($uri, 'dime:Edition');
             $graph->addResource(
-                $newItem,
-                'http://dimenovels.org/ontology#IsRealizationOfCreativeWork', $item
+                $newItem, 'dime:IsRealizationOfCreativeWork', $item
             );
         }
         return $this->getRdfResponse($graph);
