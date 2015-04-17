@@ -129,6 +129,20 @@ class EditionController extends AbstractBase
                 'http://dimenovels.org/ontology#IsRealizationOfCreativeWork', $item
             );
         }
+
+        foreach ($view->publishers as $publisher) {
+            $uri = $this->getServerUrl('publisher', ['id' => $publisher['Publisher_ID']]);
+            $pub = $graph->resource($uri, 'foaf:CorporateBody');
+            $edition->add('http://rdaregistry.info/Elements/u/P60444', $pub);
+            $name = $publisher['Publisher_Name'];
+            foreach (['Imprint_Name', 'Street', 'City_Name'] as $field) {
+                if (isset($publisher[$field])) {
+                    $name .= ', ' . $publisher[$field];
+                }
+            }
+            $edition->add('http://rdaregistry.info/Elements/u/P60547', $name);
+        }
+
         return $this->getRdfResponse($graph);
     }
 

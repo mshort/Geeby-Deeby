@@ -39,17 +39,63 @@ namespace GeebyDeeby\Controller;
 class PublisherController extends AbstractBase
 {
     /**
-     * "Show publisher" page
+     * 303 redirect page
      *
      * @return mixed
      */
     public function indexAction()
     {
+        return $this->performRdfRedirect('publisher');
+    }
+
+    /**
+     * RDF representation page
+     *
+     * @return mixed
+     */
+    public function rdfAction()
+    {
+        $view = $this->getPublisherViewModel();
+        if (!is_object($view)) {
+            $response = $this->getResponse();
+            $response->setStatusCode(404);
+            return $response;
+        }
+
+        $graph = new \EasyRdf\Graph();
+        $uri = $this->getServerUrl('publisher', ['id' => $view->publisher['Publisher_ID']]);
+        $pub = $graph->resource($uri, 'foaf:CorporateBody');
+        $pub->set('http://rdaregistry.info/Elements/u/P60549', $view->publisher['Publisher_Name']);
+
+        return $this->getRdfResponse($graph);
+     }
+
+    /**
+     * "Show publisher" page
+     *
+     * @return mixed
+     */
+    public function showAction()
+    {
+        $view = $this->getPublisherViewModel();
+        if (!$view) {
+            return $this->forwardTo(__NAMESPACE__ . '\Publisher', 'notfound');
+        }
+        return $view;
+    }
+
+    /**
+     * Get view model for publisher (or return false if not found).
+     *
+     * @return mixed
+     */
+    protected function getPublisherViewModel()
+    {
         $id = $this->params()->fromRoute('id');
         $table = $this->getDbTable('publisher');
         $rowObj = (null === $id) ? null : $table->getByPrimaryKey($id);
         if (!is_object($rowObj)) {
-            return $this->forwardTo(__NAMESPACE__ . '\Publisher', 'notfound');
+            return false;
         }
         $view = $this->createViewModel(
             array('publisher' => $rowObj->toArray())
