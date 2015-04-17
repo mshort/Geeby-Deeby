@@ -69,6 +69,13 @@ class PersonController extends AbstractBase
         $name = $view->person['First_Name'] . ' ' . $view->person['Middle_Name']
             . ' ' . $view->person['Last_Name'];
         $person->set('foaf:name', trim(preg_replace('/\s+/', ' ', $name)));
+        $authName = $view->person['Last_Name'];
+        $first = trim($view->person['First_Name'] . ' ' . $view->person['Middle_Name']);
+        if (!empty($first)) {
+            $authName .= ', ' . $first;
+        }
+        $authName .= $view->person['Extra_Details'];
+        $person->set('http://rdaregistry.info/Elements/u/P60549', $authName);
 
         return $this->getRdfResponse($graph);
     }
