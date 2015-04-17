@@ -299,13 +299,12 @@ class SeriesController extends AbstractBase
      */
     protected function getRdfList()
     {
-        set_time_limit(0);  // don't time out -- this can take a while.
         $list = $this->getDbTable('series')->getList();
         $graph = new \EasyRdf\Graph();
         foreach ($list as $series) {
             $id = $series->Series_ID;
             $uri = $this->getServerUrl('series', ['id' => $id]);
-            $graph->resource($uri, 'rdf:Description');
+            $graph->resource($uri, 'http://dimenovels.org/ontology#Series');
         }
         return $graph;
     }
@@ -317,6 +316,8 @@ class SeriesController extends AbstractBase
      */
     public function rdfAction()
     {
+        set_time_limit(0);  // don't time out -- this can take a while.
+
         // Special case -- no ID means show series list:
         $id = $this->params()->fromRoute('id');
         if (null === $id) {
@@ -333,9 +334,17 @@ class SeriesController extends AbstractBase
         $articleHelper = $this->getServiceLocator()->get('GeebyDeeby\Articles');
         $graph = new \EasyRdf\Graph();
         $uri = $this->getServerUrl('series', ['id' => $id]);
-        $series = $graph->resource($uri, 'rdf:Description');
+        $series = $graph->resource($uri, 'http://dimenovels.org/ontology#Series');
         $name = $view->series['Series_Name'];
         $series->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
+
+        foreach ($view->items as $item) {
+            $uri = $this->getServerUrl('item', ['id' => $item['Item_ID']]);
+            $item = $graph->resource($uri, 'http://schema.org/CreativeWork');
+            $graph->addResource(
+                $item, 'http://dimenovels.org/ontology#HasSeries', $series
+            );
+        }
 
         return $this->getRdfResponse($graph);
     }

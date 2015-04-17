@@ -147,14 +147,36 @@ class ItemController extends AbstractBase
         $graph = new \EasyRdf\Graph();
         $id = $view->item['Item_ID'];
         $uri = $this->getServerUrl('item', ['id' => $id]);
-        $item = $graph->resource($uri, 'rdf:Description');
+        $item = $graph->resource($uri, 'schema:CreativeWork');
         $name = $view->item['Item_Name'];
         $item->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
-        foreach ($view->credits as $credit) {
-            $personUri = $this->getServerUrl('person', ['id' => $credit['Person_ID']]);
-            $item->add('dcterms:creator', $graph->resource($personUri));
+
+        foreach ($view->contains as $current) {
+            $uri = $this->getServerUrl('item', ['id' => $current['Item_ID']]);
+            $newItem = $graph->resource($uri, 'schema:CreativeWork');
+            $graph->addResource(
+                $item, 'http://dimenovels.org/ontology#IsRealizationOfCreativeWork',
+                $newItem
+            );
         }
 
+        foreach ($view->containedIn as $current) {
+            $uri = $this->getServerUrl('item', ['id' => $current['Item_ID']]);
+            $newItem = $graph->resource($uri, 'schema:CreativeWork');
+            $graph->addResource(
+                $newItem,
+                'http://dimenovels.org/ontology#IsRealizationOfCreativeWork', $item
+            );
+        }
+
+        foreach ($view->editions as $current) {
+            $uri = $this->getServerUrl('edition', ['id' => $current['Edition_ID']]);
+            $newItem = $graph->resource($uri, 'http://dimenovels.org/ontology#Edition');
+            $graph->addResource(
+                $newItem,
+                'http://dimenovels.org/ontology#IsRealizationOfCreativeWork', $item
+            );
+        }
         return $this->getRdfResponse($graph);
     }
 
