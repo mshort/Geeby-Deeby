@@ -147,7 +147,12 @@ class ItemController extends AbstractBase
         $graph = new \EasyRdf\Graph();
         $id = $view->item['Item_ID'];
         $uri = $this->getServerUrl('item', ['id' => $id]);
-        $item = $graph->resource($uri, 'schema:CreativeWork');
+        $type = $this->getDbTable('materialtype')
+            ->getByPrimaryKey($view->item['Material_Type_ID']);
+        $item = $graph->resource(
+            $uri, empty($type->Material_Type_RDF_Class)
+                ? 'schema:CreativeWork' : $type->Material_Type_RDF_Class
+        );
         $name = $view->item['Item_Name'];
         $item->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
 
