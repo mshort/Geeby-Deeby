@@ -426,6 +426,19 @@ class AbstractBase extends AbstractActionController
     }
 
     /**
+     * Should we perform a 303 redirect to RDF?
+     *
+     * @return bool
+     */
+    protected function rdfRequested()
+    {
+        $accept = $this->getRequest()->getHeaders()->get('accept');
+        $rdfxml = $accept->match('application/rdf+xml');
+        $html = $accept->match('text/html');
+        return ($rdfxml->priority > $html->priority);
+    }
+
+    /**
      * Perform a 303 redirect for RDF display.
      *
      * @param string $route   Target route
@@ -435,11 +448,7 @@ class AbstractBase extends AbstractActionController
      */
     protected function performRdfRedirect($route, $idParam = 'id')
     {
-        $accept = $this->getRequest()->getHeaders()->get('accept');
-        $rdfxml = $accept->match('application/rdf+xml');
-        $html = $accept->match('text/html');
-        $action = ($rdfxml->priority > $html->priority)
-            ? 'RDF' : 'Show';
+        $action = $this->rdfRequested() ? 'RDF' : 'Show';
         $id = $this->params()->fromRoute($idParam);
         $response = $this->redirect()->toRoute(
             $route, ['action' => $action, $idParam => $id],

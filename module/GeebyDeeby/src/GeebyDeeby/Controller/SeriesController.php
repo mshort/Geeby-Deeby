@@ -272,12 +272,42 @@ class SeriesController extends AbstractBase
     {
         $id = $this->params()->fromRoute('id');
         if (null === $id) {
+            $action = $this->rdfRequested() ? 'RDF' : 'List';
+            $response = $this->redirect()->toRoute(
+                'series', ['id' => $action],
+                ['query' => $this->params()->fromQuery()]
+            );
+            $response->setStatusCode(303);
+            return $response;
+        }
+        if ($id == 'List') {
             return $this->forwardTo(__NAMESPACE__ . '\Series', 'list');
+        }
+        if ($id == 'RDF') {
+            return $this->forwardTo(__NAMESPACE__ . '\Series', 'rdf');
         }
         if ($id == 'Comments') {
             return $this->forwardTo(__NAMESPACE__ . '\Series', 'comments');
         }
         return $this->performRdfRedirect('series');
+    }
+
+    /**
+     * Get an RDF graph of all series.
+     *
+     * @return \EasyRdf\Graph
+     */
+    protected function getRdfList()
+    {
+        set_time_limit(0);  // don't time out -- this can take a while.
+        $list = $this->getDbTable('series')->getList();
+        $graph = new \EasyRdf\Graph();
+        foreach ($list as $series) {
+            $id = $series->Series_ID;
+            $uri = $this->getServerUrl('series', ['id' => $id]);
+            $graph->resource($uri, 'rdf:Description');
+        }
+        return $graph;
     }
 
     /**
@@ -287,6 +317,12 @@ class SeriesController extends AbstractBase
      */
     public function rdfAction()
     {
+        // Special case -- no ID means show series list:
+        $id = $this->params()->fromRoute('id');
+        if (null === $id) {
+            return $this->getRdfResponse($this->getRdfList());
+        }
+
         $view = $this->getViewModelWithSeriesAndDetails();
         if (!is_object($view)) {
             $response = $this->getResponse();
