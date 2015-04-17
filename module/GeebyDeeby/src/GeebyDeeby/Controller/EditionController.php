@@ -158,6 +158,18 @@ class EditionController extends AbstractBase
         if (!empty($view->edition['Edition_Length'])) {
             $edition->add('rda:P60550', $view->edition['Edition_Length']);
         }
+
+        foreach ($view->dates as $date) {
+            if ($date['Year'] > 0) {
+                $dateStr = $date['Year'];
+                foreach (['Month', 'Day'] as $field) {
+                    if (!empty($date[$field])) {
+                        $dateStr .= '-' . substr('0' . $date[$field], -2);
+                    }
+                }
+                $edition->add('rda:P60073', $dateStr);
+            }
+        }
         return $this->getRdfResponse($graph);
     }
 
