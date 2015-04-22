@@ -338,6 +338,14 @@ class SeriesController extends AbstractBase
         $graph = new \EasyRdf\Graph();
         $uri = $this->getServerUrl('series', ['id' => $id]);
         $series = $graph->resource($uri, 'dime:Series');
+        foreach ($view->seriesAttributes as $current) {
+            if (!empty($current['Series_Attribute_RDF_Property'])) {
+                $series->set(
+                    $current['Series_Attribute_RDF_Property'],
+                    $current['Series_Attribute_Value']
+                );
+            }
+        }
         $name = $view->series['Series_Name'];
         $series->set('dcterms:title', $articleHelper->formatTrailingArticles($name));
 
