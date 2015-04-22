@@ -416,26 +416,56 @@ class AbstractBase extends AbstractActionController
      */
     protected function getRdfResponse(\EasyRdf\Graph $graph)
     {
+        $requestedFormat = $this->rdfRequested(true);
+        switch ($requestedFormat) {
+        case 'application/x-turtle':
+            $serialization = 'turtle';
+            break;
+        case 'application/rdf+xml':
+            $serialization = 'rdfxml';
+            break;
+        default:
+            $serialization = 'ntriples';
+            break;
+        }
+
         $response = $this->getResponse();
-        $response->setContent($graph->serialise('rdfxml'));
+        $response->setContent($graph->serialise($serialization));
         $headers = $response->getHeaders();
-        $headers->addHeaderLine(
-            'Content-type', 'application/rdf+xml'
-        );
+        $headers->addHeaderLine('Content-type', $requestedFormat);
         return $response;
     }
 
     /**
-     * Should we perform a 303 redirect to RDF?
+     * Should we perform a 303 redirect to RDF? Return preferred RDF format
+     * if true, false otherwise.
      *
-     * @return bool
+     * @param bool $force Should we FORCE some kind of RDF format, or allow the
+     * possibility of HTML?
+     *
+     * @return string|bool
      */
-    protected function rdfRequested()
+    protected function rdfRequested($force = false)
     {
         $accept = $this->getRequest()->getHeaders()->get('accept');
-        $rdfxml = $accept->match('application/rdf+xml');
-        $html = $accept->match('text/html');
-        return ($rdfxml->priority > $html->priority);
+        // Order of preference: earlier items in list are preferred; later
+        // items will only be chosen if they're explicitly given a higher
+        // priority in the accept headers.
+        $rdfForms = array(
+            'application/x-turtle',     // Turtle
+            'text/plain',               // N-Triples
+            'application/rdf+xml',      // RDF-XML
+        );
+        $bestMatch = $force ? -1 : $accept->match('text/html');
+        $bestFormat = false;            // HTML by default
+        foreach ($rdfForms as $current) {
+            $currentMatch = $accept->match($current);
+            if ($currentMatch > $bestMatch) {
+                $bestMatch = $currentMatch;
+                $bestFormat = $current;
+            }
+        }
+        return $bestFormat;
     }
 
     /**
