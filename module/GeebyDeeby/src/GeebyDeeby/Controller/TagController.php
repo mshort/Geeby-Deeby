@@ -125,6 +125,8 @@ class TagController extends AbstractBase
             array('tag' => $rowObj->toArray())
         );
         $view->items = $this->getDbTable('itemstags')->getItemsForTag($id);
+        $view->tagAttributes = $this->getDbTable('tagsattributesvalues')
+            ->getAttributesForTag($id);
         return $view;
     }
 
